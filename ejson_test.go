@@ -20,7 +20,7 @@ var (
 
 func TestGenerateKeypair(t *testing.T) {
 	Convey("GenerateKeypair", t, func() {
-		pub, priv, err := GenerateKeypair()
+		pub, priv, _, err := GenerateKeypair("")
 		Convey("should return two strings that look key-like", func() {
 			So(err, ShouldBeNil)
 			So(pub, ShouldNotEqual, priv)

@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Shopify/ejson/aws"
 	"github.com/Shopify/ejson/crypto"
 	"github.com/Shopify/ejson/json"
 )
@@ -19,12 +20,19 @@ import (
 // GenerateKeypair is used to create a new ejson keypair. It returns the keys as
 // hex-encoded strings, suitable for printing to the screen. hex.DecodeString
 // can be used to load the true representation if necessary.
-func GenerateKeypair() (pub string, priv string, err error) {
+func GenerateKeypair(kmsKeyID string) (pub string, priv string, privEnc string, err error) {
 	var kp crypto.Keypair
 	if err := kp.Generate(); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return kp.PublicString(), kp.PrivateString(), nil
+	priv = kp.PrivateString()
+	if kmsKeyID != "" {
+		privEnc, err = aws.EncryptPrivateKeyWithKMS(kp.PrivateString(), kmsKeyID)
+		if err != nil {
+			return "", "", "", err
+		}
+	}
+	return kp.PublicString(), priv, privEnc, nil
 }
 
 // Encrypt reads all contents from 'in', extracts the pubkey
@@ -43,7 +51,7 @@ func Encrypt(in io.Reader, out io.Writer) (int, error) {
 		return -1, err
 	}
 
-	pubkey, err := json.ExtractPublicKey(data)
+	pubkey, _, err := json.ExtractMetadata(data)
 	if err != nil {
 		return -1, err
 	}
@@ -106,12 +114,12 @@ func Decrypt(in io.Reader, out io.Writer, keydir string, userSuppliedPrivateKey 
 		return err
 	}
 
-	pubkey, err := json.ExtractPublicKey(data)
+	pubkey, privKeyEnc, err := json.ExtractMetadata(data)
 	if err != nil {
 		return err
 	}
 
-	privkey, err := findPrivateKey(pubkey, keydir, userSuppliedPrivateKey)
+	privkey, err := findPrivateKey(pubkey, keydir, privKeyEnc, userSuppliedPrivateKey)
 	if err != nil {
 		return err
 	}
@@ -172,10 +180,12 @@ func readPrivateKeyFromDisk(pubkey [32]byte, keydir string) (privkey string, err
 	return
 }
 
-func findPrivateKey(pubkey [32]byte, keydir string, userSuppliedPrivateKey string) (privkey [32]byte, err error) {
+func findPrivateKey(pubkey [32]byte, privKeyEnc string, keydir string, userSuppliedPrivateKey string) (privkey [32]byte, err error) {
 	var privkeyString string
 	if userSuppliedPrivateKey != "" {
 		privkeyString = userSuppliedPrivateKey
+	} else if privKeyEnc != "" {
+		privkeyString, err = aws.DecryptPrivateKeyWithKMS(privKeyEnc)
 	} else {
 		privkeyString, err = readPrivateKeyFromDisk(pubkey, keydir)
 		if err != nil {

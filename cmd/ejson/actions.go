@@ -44,8 +44,8 @@ func decryptAction(args []string, keydir, userSuppliedPrivateKey, outFile string
 	return err
 }
 
-func keygenAction(args []string, keydir string, wFlag bool) error {
-	pub, priv, err := ejson.GenerateKeypair()
+func keygenAction(args []string, keydir string, kmsKeyID string, wFlag bool) error {
+	pub, priv, privEnc, err := ejson.GenerateKeypair(kmsKeyID)
 	if err != nil {
 		return err
 	}
@@ -59,6 +59,9 @@ func keygenAction(args []string, keydir string, wFlag bool) error {
 		fmt.Println(pub)
 	} else {
 		fmt.Printf("Public Key:\n%s\nPrivate Key:\n%s\n", pub, priv)
+		if privEnc != "" {
+			fmt.Printf("Private Key Encrypted with KMS:\n%s", privEnc)
+		}
 	}
 	return nil
 }

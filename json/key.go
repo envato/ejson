@@ -10,6 +10,10 @@ const (
 	// PublicKeyField is the key name at which the public key should be
 	// stored in an EJSON document.
 	PublicKeyField = "_public_key"
+
+	// PrivateKeyEncField key name at which the KMS encrypted private key should be stored in
+	// the EJSON document.
+	PrivateKeyEncField = "_private_key_enc"
 )
 
 // ErrPublicKeyMissing indicates that the PublicKeyField key was not found
@@ -20,9 +24,9 @@ var ErrPublicKeyMissing = errors.New("public key not present in EJSON file")
 // value could not be parsed into a valid key.
 var ErrPublicKeyInvalid = errors.New("public key has invalid format")
 
-// ExtractPublicKey finds the _public_key value in an EJSON document and
+// ExtractMetadata finds the _public_key value in an EJSON document and
 // parses it into a key usable with the crypto library.
-func ExtractPublicKey(data []byte) (key [32]byte, err error) {
+func ExtractMetadata(data []byte) (key [32]byte, privKeyEnc string, err error) {
 	var (
 		obj map[string]interface{}
 		ks  string
@@ -33,6 +37,13 @@ func ExtractPublicKey(data []byte) (key [32]byte, err error) {
 	if err != nil {
 		return
 	}
+	// optional fields
+	pkEnc, ok := obj[PrivateKeyEncField]
+	if ok {
+		privKeyEnc = pkEnc.(string)
+	}
+
+	// requied
 	k, ok := obj[PublicKeyField]
 	if !ok {
 		goto missing
