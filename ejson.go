@@ -119,7 +119,7 @@ func Decrypt(in io.Reader, out io.Writer, keydir string, userSuppliedPrivateKey 
 		return err
 	}
 
-	privkey, err := findPrivateKey(pubkey, keydir, privKeyEnc, userSuppliedPrivateKey)
+	privkey, err := findPrivateKey(pubkey, privKeyEnc, keydir, userSuppliedPrivateKey)
 	if err != nil {
 		return err
 	}
