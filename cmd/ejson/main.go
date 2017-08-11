@@ -97,12 +97,12 @@ func main() {
 					Usage: "rather than printing both keys, print the public and write the private into the keydir",
 				},
 				cli.StringFlag{
-					Name:  "kmskeyid",
+					Name:  "kms-key-id",
 					Usage: "KMS Key ID to encrypt the private key with",
 				},
 			},
 			Action: func(c *cli.Context) {
-				if err := keygenAction(c.Args(), c.GlobalString("keydir"), c.String("kmskeyid"), c.Bool("write")); err != nil {
+				if err := keygenAction(c.Args(), c.GlobalString("keydir"), c.String("kms-key-id"), c.Bool("write")); err != nil {
 					fmt.Println("Key generation failed:", err)
 					os.Exit(1)
 				}
