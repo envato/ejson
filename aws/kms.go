@@ -14,6 +14,9 @@ func DecryptPrivateKeyWithKMS(privateKeyEnc string) (key string, err error) {
 	kmsSvc := kms.New(awsSession)
 
 	encryptedValue, err := base64.StdEncoding.DecodeString(privateKeyEnc)
+	if err != nil {
+		return "", err
+	}
 
 	params := &kms.DecryptInput{
 		CiphertextBlob: []byte(encryptedValue),
